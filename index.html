@@ -2,13 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Animal Kingdom Derby</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        body { touch-action: manipulation; overflow-x: hidden; }
+        
         .track-bg {
             background: linear-gradient(to bottom, 
                 #f1f5f9 0%, #f1f5f9 40%, 
@@ -18,46 +20,48 @@
         
         @keyframes gallop {
             0%, 100% { transform: translateY(0) rotate(-2deg); }
-            50% { transform: translateY(-5px) rotate(2deg); }
+            50% { transform: translateY(-3px) rotate(2deg); }
         }
 
         .racer-sprite {
-            font-size: 3.5rem;
+            font-size: 2.5rem; /* Smaller for mobile */
             display: inline-block;
             transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
             position: absolute;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        @media (min-width: 768px) {
+            .racer-sprite { font-size: 3.5rem; }
         }
 
         .active-racer { animation: gallop 0.6s infinite ease-in-out; }
 
         .finish-line {
             position: absolute;
-            left: 20px;
+            left: 10px;
             top: 45%;
             bottom: 5%;
-            width: 24px;
+            width: 16px;
             background: repeating-linear-gradient(
                 0deg,
                 #1e293b,
-                #1e293b 12px,
-                #ffffff 12px,
-                #ffffff 24px
+                #1e293b 8px,
+                #ffffff 8px,
+                #ffffff 16px
             );
-            border: 3px solid #0f172a;
-            box-shadow: 4px 0 10px rgba(0,0,0,0.2);
+            border: 2px solid #0f172a;
         }
 
         .lane-divider {
-            height: 4px;
+            height: 2px;
             background: rgba(255,255,255,0.3);
             width: 100%;
             position: absolute;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-900">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -66,12 +70,12 @@
         const QUESTIONS = [
             {
                 q: "What type of skeleton does your rival, the Beetle, have?",
-                options: ["Endoskeleton (Internal)", "Exoskeleton (External)", "No skeleton at all"],
+                options: ["Endoskeleton", "Exoskeleton", "No skeleton"],
                 correct: 1,
                 fact: "Invertebrates like beetles have a hard chitinous exoskeleton for protection."
             },
             {
-                q: "As a Horse, you are a vertebrate. What is your internal support structure called?",
+                q: "As a Horse, you are a vertebrate. What is your internal support called?",
                 options: ["Exoskeleton", "Endoskeleton", "Hydroskeleton"],
                 correct: 1,
                 fact: "Vertebrates have an internal framework of bone or cartilage called an endoskeleton."
@@ -80,13 +84,13 @@
                 q: "Which of these animals lacks a vertebral column (backbone)?",
                 options: ["The Shark", "The Beetle", "The Horse"],
                 correct: 1,
-                fact: "Sharks have backbones made of cartilage, while horses have bone. Beetles have no backbone."
+                fact: "Sharks have backbones made of cartilage. Beetles have no backbone at all!"
             },
             {
-                q: "What type of body symmetry do all three racers (Horse, Shark, Beetle) share?",
-                options: ["Radial Symmetry", "Asymmetry", "Bilateral Symmetry"],
+                q: "What type of body symmetry do Horse, Shark, and Beetle all share?",
+                options: ["Radial", "Asymmetry", "Bilateral"],
                 correct: 2,
-                fact: "Bilateral symmetry means the body can be divided into two identical halves along a single plane."
+                fact: "Bilateral symmetry means the body can be divided into two identical halves."
             },
             {
                 q: "Which group of vertebrates do Horses belong to?",
@@ -95,10 +99,10 @@
                 fact: "Mammals are vertebrates that have hair/fur and produce milk for their young."
             },
             {
-                q: "The Shark is a vertebrate. What is its skeleton primarily made of?",
+                q: "The Shark is a vertebrate. What is its skeleton made of?",
                 options: ["Hardened Chitin", "Calcium Bone", "Flexible Cartilage"],
                 correct: 2,
-                fact: "Sharks are cartilaginous fish; their 'bones' are much lighter and more flexible than yours!"
+                fact: "Sharks are cartilaginous fish; their 'bones' are lighter and more flexible than yours."
             }
         ];
 
@@ -122,7 +126,7 @@
             }, [gameState, feedback]);
 
             useEffect(() => {
-                const finishThreshold = 12;
+                const finishThreshold = 10;
                 if (playerPos <= finishThreshold && gameState === 'playing') {
                     setWinner('Charlotte (The Horse)');
                     setGameState('end');
@@ -137,7 +141,6 @@
 
             const handleAnswer = (idx) => {
                 if (feedback) return;
-
                 const isCorrect = idx === QUESTIONS[currentQ].correct;
                 
                 if (isCorrect) {
@@ -153,7 +156,6 @@
                     if (currentQ < QUESTIONS.length - 1) {
                         setCurrentQ(c => c + 1);
                     } else if (gameState !== 'end') {
-                        // Fallback end state
                         setGameState('end');
                         setWinner(playerPos < Math.min(beetlePos, sharkPos) ? 'Charlotte (The Horse)' : 'The Rival');
                     }
@@ -161,89 +163,75 @@
             };
 
             return (
-                <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 font-sans">
-                    <div className="max-w-4xl w-full bg-white rounded-[3rem] shadow-2xl overflow-hidden border-[12px] border-slate-800">
+                <div className="min-h-screen flex flex-col items-center justify-start sm:justify-center p-2 sm:p-4">
+                    <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border-4 sm:border-[12px] border-slate-800">
                         
-                        {/* Racing Track */}
-                        <div className="track-bg h-[400px] w-full relative overflow-hidden">
+                        {/* Racing Track - Adjusted for mobile height */}
+                        <div className="track-bg h-[240px] sm:h-[350px] w-full relative overflow-hidden">
                             <div className="finish-line"></div>
                             
-                            {/* Lane 1: Beetle */}
-                            <div className="absolute top-[35%] w-full h-1">
+                            {/* Beetle Lane */}
+                            <div className="absolute top-[35%] w-full">
                                 <div className="lane-divider"></div>
-                                <div className="racer-sprite active-racer" style={{ left: `${beetlePos}%`, top: '-45px' }}>
+                                <div className="racer-sprite active-racer" style={{ left: `${beetlePos}%`, top: '-35px' }}>
                                     🪲
-                                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500 uppercase">Beetle</span>
+                                    <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[8px] font-bold text-slate-500">BEETLE</span>
                                 </div>
                             </div>
 
-                            {/* Lane 2: Charlotte (Horse) */}
-                            <div className="absolute top-[60%] w-full h-1">
+                            {/* Charlotte Lane */}
+                            <div className="absolute top-[60%] w-full">
                                 <div className="lane-divider !bg-amber-200/50"></div>
-                                <div className="racer-sprite active-racer z-10" style={{ left: `${playerPos}%`, top: '-50px' }}>
+                                <div className="racer-sprite active-racer z-10" style={{ left: `${playerPos}%`, top: '-40px' }}>
                                     🐎
-                                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-amber-600 text-white text-[10px] px-3 py-1 rounded-full font-black shadow-lg">CHARLOTTE</span>
+                                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-amber-600 text-white text-[8px] px-2 py-0.5 rounded-full font-black">CHARLOTTE</span>
                                 </div>
                             </div>
 
-                            {/* Lane 3: Shark */}
-                            <div className="absolute top-[85%] w-full h-1">
+                            {/* Shark Lane */}
+                            <div className="absolute top-[85%] w-full">
                                 <div className="lane-divider"></div>
-                                <div className="racer-sprite active-racer" style={{ left: `${sharkPos}%`, top: '-45px' }}>
+                                <div className="racer-sprite active-racer" style={{ left: `${sharkPos}%`, top: '-35px' }}>
                                     🦈
-                                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500 uppercase">Shark</span>
+                                    <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[8px] font-bold text-slate-500">SHARK</span>
                                 </div>
                             </div>
-
-                            <div className="absolute top-4 right-8 text-slate-400 font-black text-4xl opacity-20 italic">TRIPLE THREAT DERBY</div>
                         </div>
 
                         {/* Gameplay UI */}
-                        <div className="p-12 bg-white">
+                        <div className="p-4 sm:p-8 bg-white">
                             {gameState === 'start' && (
-                                <div className="text-center">
-                                    <h1 className="text-6xl font-black text-slate-900 mb-4 tracking-tight">Charlotte's Race</h1>
-                                    <p className="text-slate-500 text-xl mb-10 font-medium italic">Horses (Vertebrates) vs Sharks & Beetles!</p>
+                                <div className="text-center py-4">
+                                    <h1 className="text-3xl sm:text-5xl font-black text-slate-900 mb-2">Charlotte's Race</h1>
+                                    <p className="text-slate-500 text-sm sm:text-lg mb-6 italic">Vertebrates vs Invertebrates!</p>
                                     <button 
                                         onClick={() => setGameState('playing')}
-                                        className="bg-amber-600 hover:bg-amber-500 text-white font-black py-6 px-20 rounded-2xl text-3xl shadow-[0_10px_0_rgb(180,83,9)] active:translate-y-2 active:shadow-none transition-all"
+                                        className="w-full sm:w-auto bg-amber-600 text-white font-black py-4 px-10 rounded-xl text-xl shadow-[0_6px_0_rgb(180,83,9)] active:translate-y-1 active:shadow-none transition-all"
                                     >
-                                        START THE RACE
+                                        START RACE
                                     </button>
                                 </div>
                             )}
 
                             {gameState === 'playing' && (
                                 <div className="relative">
-                                    <div className="flex justify-between items-end mb-10 border-b-2 border-slate-100 pb-4">
-                                        <div>
-                                            <div className="text-amber-600 font-black text-sm uppercase tracking-widest mb-1">Current Question</div>
-                                            <div className="text-slate-900 font-black text-4xl">{currentQ + 1} <span className="text-slate-300 text-2xl">/ {QUESTIONS.length}</span></div>
-                                        </div>
-                                        <div className="flex gap-4">
-                                            <div className="flex flex-col items-center">
-                                                <span className="text-[10px] font-bold text-slate-400">INVERTEBRATE</span>
-                                                <div className="bg-slate-100 px-4 py-2 rounded-xl text-lg font-black text-slate-600">🪲</div>
-                                            </div>
-                                            <div className="flex flex-col items-center">
-                                                <span className="text-[10px] font-bold text-amber-500">YOU</span>
-                                                <div className="bg-amber-100 px-4 py-2 rounded-xl text-lg font-black text-amber-700">🐎</div>
-                                            </div>
-                                        </div>
+                                    <div className="flex justify-between items-center mb-4 border-b pb-2">
+                                        <div className="text-slate-900 font-black text-lg">Q {currentQ + 1}/6</div>
+                                        <div className="text-[10px] font-black text-amber-600 uppercase">Vertebrate Derby</div>
                                     </div>
 
-                                    <h2 className="text-3xl font-extrabold text-slate-800 mb-10 leading-tight min-h-[80px]">
+                                    <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-6 min-h-[60px]">
                                         {QUESTIONS[currentQ].q}
                                     </h2>
 
-                                    <div className="grid grid-cols-1 gap-4">
+                                    <div className="grid grid-cols-1 gap-3">
                                         {QUESTIONS[currentQ].options.map((opt, i) => (
                                             <button
                                                 key={i}
                                                 onClick={() => handleAnswer(i)}
                                                 disabled={!!feedback}
-                                                className={`p-6 rounded-2xl border-4 text-left font-bold text-xl transition-all
-                                                    ${feedback ? 'opacity-40 cursor-not-allowed' : 'hover:border-amber-500 hover:bg-amber-50 border-slate-100 bg-slate-50 text-slate-700'}
+                                                className={`p-4 rounded-xl border-2 text-left font-bold text-lg transition-all
+                                                    ${feedback ? 'opacity-40' : 'active:bg-amber-100 border-slate-200 bg-slate-50 text-slate-700'}
                                                 `}
                                             >
                                                 {opt}
@@ -252,12 +240,12 @@
                                     </div>
 
                                     {feedback && (
-                                        <div className="absolute inset-0 z-40 flex items-center justify-center">
-                                            <div className="bg-white/95 backdrop-blur-sm p-12 rounded-[3rem] shadow-2xl border-8 border-slate-900 text-center animate-in fade-in zoom-in duration-300">
-                                                <div className={`text-7xl font-black mb-6 ${feedback.type === 'win' ? 'text-green-500' : 'text-red-500'}`}>
-                                                    {feedback.type === 'win' ? 'YEAH!' : 'WHOA!'}
+                                        <div className="absolute inset-0 z-40 flex items-center justify-center p-4">
+                                            <div className="bg-white p-6 rounded-3xl shadow-2xl border-4 border-slate-900 text-center animate-in zoom-in duration-200">
+                                                <div className={`text-4xl font-black mb-2 ${feedback.type === 'win' ? 'text-green-500' : 'text-red-500'}`}>
+                                                    {feedback.type === 'win' ? 'GREAT!' : 'OOPS!'}
                                                 </div>
-                                                <p className="text-2xl font-bold text-slate-800 leading-relaxed max-w-md">{QUESTIONS[currentQ].fact}</p>
+                                                <p className="text-sm font-bold text-slate-600 leading-tight">{QUESTIONS[currentQ].fact}</p>
                                             </div>
                                         </div>
                                     )}
@@ -266,18 +254,18 @@
 
                             {gameState === 'end' && (
                                 <div className="text-center py-4">
-                                    <div className="text-9xl mb-8"> {winner.includes('Charlotte') ? '🥇' : '🥈'} </div>
-                                    <h2 className="text-6xl font-black text-slate-900 mb-6">{winner} WINS!</h2>
-                                    <p className="text-2xl text-slate-500 mb-12 font-medium italic max-w-lg mx-auto">
+                                    <div className="text-6xl mb-4"> {winner.includes('Charlotte') ? '🥇' : '🏁'} </div>
+                                    <h2 className="text-3xl font-black text-slate-900 mb-2">{winner} WINS!</h2>
+                                    <p className="text-sm text-slate-500 mb-8 px-4">
                                         {winner.includes('Charlotte') 
-                                            ? "Incredible speed! Charlotte the Horse has proven that mammals are top-tier vertebrates." 
-                                            : "The rivals were too quick! Remember, invertebrates rely on exoskeletons while you rely on your strong bones."}
+                                            ? "Charlotte the Horse proved that mammals have the strongest endoskeletons!" 
+                                            : "A tough race! Remember, your internal bones give you the advantage in size and strength."}
                                     </p>
                                     <button 
                                         onClick={() => window.location.reload()}
-                                        className="bg-slate-900 text-white font-black py-6 px-20 rounded-2xl text-2xl hover:bg-slate-800 hover:scale-105 active:scale-95 transition-all shadow-xl"
+                                        className="w-full bg-slate-900 text-white font-black py-4 px-10 rounded-xl text-lg"
                                     >
-                                        PLAY AGAIN
+                                        RETRY
                                     </button>
                                 </div>
                             )}
